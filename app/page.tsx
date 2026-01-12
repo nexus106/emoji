@@ -1,65 +1,173 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from "react";
+import { getAllEmojis, getEmojisByCategory, searchEmojis } from "@/lib/emojis";
+import { categories } from "@/lib/categories";
+import type { EmojiCategory } from "@/lib/types";
+
+const HISTORY_KEY = "emoji-history";
+const MAX_HISTORY = 20;
+
+function getEmojiHistory(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = localStorage.getItem(HISTORY_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveEmojiHistory(history: string[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch (err) {
+    console.error("Failed to save history:", err);
+  }
+}
 
 export default function Home() {
+  const [selectedCategory, setSelectedCategory] = useState<EmojiCategory | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [copiedEmoji, setCopiedEmoji] = useState<string | null>(null);
+  const [emojiHistory, setEmojiHistory] = useState<string[]>([]);
+
+  // Load history from localStorage on mount
+  useEffect(() => {
+    setEmojiHistory(getEmojiHistory());
+  }, []);
+
+  const filteredEmojis = searchQuery
+    ? searchEmojis(searchQuery)
+    : selectedCategory === "all"
+      ? getAllEmojis()
+      : getEmojisByCategory(selectedCategory);
+
+  const copyToClipboard = async (emoji: string) => {
+    try {
+      await navigator.clipboard.writeText(emoji);
+      setCopiedEmoji(emoji);
+
+      // Update history
+      const newHistory = [emoji, ...emojiHistory.filter((e) => e !== emoji)].slice(0, MAX_HISTORY);
+      setEmojiHistory(newHistory);
+      saveEmojiHistory(newHistory);
+
+      setTimeout(() => setCopiedEmoji(null), 1000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-zinc-50 dark:bg-black">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <header className="mb-8 text-center">
+          <h1 className="mb-4 text-4xl font-bold text-zinc-900 dark:text-zinc-50">
+            Emoji Copy
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-zinc-600 dark:text-zinc-400">
+            Click any emoji to copy it to your clipboard
           </p>
+        </header>
+
+        {/* Recent Emojis */}
+        {emojiHistory.length > 0 && (
+          <div className="mb-6">
+            <h2 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+              Recently Used
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {emojiHistory.map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => copyToClipboard(emoji)}
+                  className="flex aspect-square w-12 items-center justify-center rounded-lg bg-white text-2xl transition-all hover:bg-zinc-100 hover:scale-110 active:scale-95 dark:bg-zinc-900 dark:hover:bg-zinc-800 sm:w-14 sm:text-3xl"
+                  title="Copy this emoji"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Search Bar */}
+        <div className="mb-6">
+          <input
+            type="text"
+            placeholder="Search emojis..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-lg border border-zinc-300 px-4 py-3 text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder-zinc-500"
+          />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Category Navigation */}
+        <nav className="mb-6 overflow-x-auto">
+          <div className="flex gap-2 pb-2">
+            <button
+              onClick={() => setSelectedCategory("all")}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                selectedCategory === "all"
+                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                  : "bg-white text-zinc-700 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              }`}
+            >
+              All
+            </button>
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={`flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                  selectedCategory === category.id
+                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                    : "bg-white text-zinc-700 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                }`}
+              >
+                <span>{category.icon}</span>
+                <span className="hidden sm:inline">{category.label}</span>
+              </button>
+            ))}
+          </div>
+        </nav>
+
+        {/* Toast Notification */}
+        {copiedEmoji && (
+          <div className="fixed bottom-4 right-4 rounded-lg bg-green-500 px-4 py-2 text-white shadow-lg dark:bg-green-600">
+            Copied {copiedEmoji}!
+          </div>
+        )}
+
+        {/* Emoji Grid */}
+        <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12">
+          {filteredEmojis.map((emoji) => (
+            <button
+              key={emoji.emoji}
+              onClick={() => copyToClipboard(emoji.emoji)}
+              className="group relative flex aspect-square items-center justify-center rounded-lg bg-white p-2 text-3xl transition-all hover:bg-zinc-100 hover:scale-110 active:scale-95 dark:bg-zinc-900 dark:hover:bg-zinc-800 sm:text-4xl"
+              title={emoji.name}
+            >
+              {emoji.emoji}
+              {copiedEmoji === emoji.emoji && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-green-500/20">
+                  <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              )}
+            </button>
+          ))}
         </div>
-      </main>
+
+        {/* Results Count */}
+        <div className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+          {filteredEmojis.length} emoji{filteredEmojis.length !== 1 ? "s" : ""} found
+        </div>
+      </div>
     </div>
   );
 }

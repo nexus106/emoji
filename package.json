@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "dev": "bun --bun next dev",
+    "build": "bun --bun next build",
+    "start": "bun --bun next start",
+    "lint": "eslint",
+    "test": "bun test"
   },
   "dependencies": {
     "next": "16.1.1",
@@ -14,7 +15,10 @@
     "react-dom": "19.2.3"
   },
   "devDependencies": {
+    "@happy-dom/global-registrator": "^20.1.0",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
