@@ -5,12 +5,11 @@ import { EmojiCategory } from "./types";
 describe("Categories Data", () => {
   test("should have all required categories", () => {
     const requiredCategories: EmojiCategory[] = [
-      "smileys",
       "people",
-      "animals",
-      "food",
-      "activities",
-      "travel",
+      "nature",
+      "foods",
+      "activity",
+      "places",
       "objects",
       "symbols",
       "flags",

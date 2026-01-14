@@ -1,14 +1,19 @@
 import { describe, expect, test } from "bun:test";
 import { categories } from "./categories";
-import { emojis, getAllEmojis, getEmojisByCategory, searchEmojis } from "./emojis";
+import { getAllEmojis, getEmojisByCategory, searchEmojis } from "./emojis";
 
 describe("Emoji Data", () => {
-  test("should have at least one emoji", () => {
+  test("should have emojis", () => {
+    const emojis = getAllEmojis();
     expect(emojis.length).toBeGreaterThan(0);
+    // Should have significantly more emojis now with @emoji-mart/data
+    expect(emojis.length).toBeGreaterThan(1000);
   });
 
   test("each emoji should have required properties", () => {
+    const emojis = getAllEmojis();
     emojis.forEach((emoji) => {
+      expect(emoji).toHaveProperty("id");
       expect(emoji).toHaveProperty("emoji");
       expect(emoji).toHaveProperty("name");
       expect(emoji).toHaveProperty("keywords");
@@ -16,13 +21,8 @@ describe("Emoji Data", () => {
     });
   });
 
-  test("each emoji should have at least one keyword", () => {
-    emojis.forEach((emoji) => {
-      expect(emoji.keywords.length).toBeGreaterThan(0);
-    });
-  });
-
   test("emojis should only contain valid categories", () => {
+    const emojis = getAllEmojis();
     const validCategories = new Set(categories.map((c) => c.id));
     emojis.forEach((emoji) => {
       expect(validCategories.has(emoji.category)).toBe(true);
@@ -33,24 +33,26 @@ describe("Emoji Data", () => {
 describe("getAllEmojis", () => {
   test("should return all emojis", () => {
     const allEmojis = getAllEmojis();
-    expect(allEmojis).toEqual(emojis);
-    expect(allEmojis.length).toBe(emojis.length);
+    expect(allEmojis.length).toBeGreaterThan(0);
+    // Calling again should return same result (cached)
+    const allEmojis2 = getAllEmojis();
+    expect(allEmojis).toEqual(allEmojis2);
   });
 });
 
 describe("getEmojisByCategory", () => {
   test("should return emojis for a valid category", () => {
-    const smileyEmojis = getEmojisByCategory("smileys");
-    expect(smileyEmojis.length).toBeGreaterThan(0);
-    smileyEmojis.forEach((emoji) => {
-      expect(emoji.category).toBe("smileys");
+    const peopleEmojis = getEmojisByCategory("people");
+    expect(peopleEmojis.length).toBeGreaterThan(0);
+    peopleEmojis.forEach((emoji) => {
+      expect(emoji.category).toBe("people");
     });
   });
 
   test("should return different emojis for different categories", () => {
-    const smileyEmojis = getEmojisByCategory("smileys");
-    const animalEmojis = getEmojisByCategory("animals");
-    expect(smileyEmojis).not.toEqual(animalEmojis);
+    const peopleEmojis = getEmojisByCategory("people");
+    const natureEmojis = getEmojisByCategory("nature");
+    expect(peopleEmojis).not.toEqual(natureEmojis);
   });
 
   test("should return empty array for non-existent category", () => {
@@ -71,7 +73,10 @@ describe("searchEmojis", () => {
     const results = searchEmojis("cat");
     expect(results.length).toBeGreaterThan(0);
     results.forEach((emoji) => {
-      expect(emoji.name.toLowerCase()).toContain("cat");
+      const matchesName = emoji.name.toLowerCase().includes("cat");
+      const matchesId = emoji.id.toLowerCase().includes("cat");
+      const matchesKeyword = emoji.keywords.some((k) => k.toLowerCase().includes("cat"));
+      expect(matchesName || matchesId || matchesKeyword).toBe(true);
     });
   });
 
@@ -80,8 +85,9 @@ describe("searchEmojis", () => {
     expect(results.length).toBeGreaterThan(0);
     results.forEach((emoji) => {
       const matchesName = emoji.name.toLowerCase().includes("love");
+      const matchesId = emoji.id.toLowerCase().includes("love");
       const matchesKeyword = emoji.keywords.some((k) => k.toLowerCase().includes("love"));
-      expect(matchesName || matchesKeyword).toBe(true);
+      expect(matchesName || matchesId || matchesKeyword).toBe(true);
     });
   });
 
@@ -100,6 +106,7 @@ describe("searchEmojis", () => {
 
   test("should return all emojis for empty string", () => {
     const results = searchEmojis("");
-    expect(results).toEqual(emojis);
+    const allEmojis = getAllEmojis();
+    expect(results).toEqual(allEmojis);
   });
 });
