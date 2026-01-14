@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "bun --bun next dev",
+    "predev": "bun run scripts/generate-emojis.ts",
+    "prebuild": "bun run scripts/generate-emojis.ts",
     "build": "bun --bun next build",
     "start": "bun --bun next start",
     "lint": "eslint",
