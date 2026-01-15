@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { getAllEmojis, getEmojisByCategory, searchEmojis } from "@/lib/emojis";
 import { categories } from "@/lib/categories";
+import { getCategoryUrl } from "@/lib/seo";
 import type { EmojiCategory } from "@/lib/types";
 
 const HISTORY_KEY = "emoji-history";
@@ -119,18 +121,22 @@ export default function Home() {
               All
             </button>
             {categories.map((category) => (
-              <button
+              <Link
                 key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
+                href={getCategoryUrl(category.id)}
                 className={`flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                   selectedCategory === category.id
                     ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
                     : "bg-white text-zinc-700 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
                 }`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setSelectedCategory(category.id);
+                }}
               >
                 <span>{category.icon}</span>
                 <span className="hidden sm:inline">{category.label}</span>
-              </button>
+              </Link>
             ))}
           </div>
         </nav>
