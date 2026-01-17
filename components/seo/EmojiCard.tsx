@@ -4,12 +4,14 @@ import type { Emoji } from "@/lib/types";
 interface EmojiCardProps {
   emoji: Emoji;
   size?: "sm" | "md" | "lg";
+  prefetch?: boolean;
 }
 
 /**
  * Reusable emoji card component with link to detail page
+ * prefetch: true to enable prefetching (default: true for visibility)
  */
-export default function EmojiCard({ emoji, size = "md" }: EmojiCardProps) {
+export default function EmojiCard({ emoji, size = "md", prefetch = true }: EmojiCardProps) {
   const sizeClasses = {
     sm: "w-12 h-12 text-2xl",
     md: "w-14 h-14 text-3xl",
@@ -19,6 +21,7 @@ export default function EmojiCard({ emoji, size = "md" }: EmojiCardProps) {
   return (
     <Link
       href={`/emoji/${emoji.id}`}
+      prefetch={prefetch}
       className={`
         flex aspect-square items-center justify-center
         rounded-lg bg-white p-2 transition-all

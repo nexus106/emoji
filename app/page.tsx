@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { getAllEmojis, getEmojisByCategory, searchEmojis } from "@/lib/emojis";
 import { categories } from "@/lib/categories";
-import { getCategoryUrl } from "@/lib/seo";
+import { getCategoryUrl, getEmojiUrl } from "@/lib/seo";
+import { getPopularEmojis } from "@/lib/popular-emojis";
 import type { EmojiCategory } from "@/lib/types";
 
 const HISTORY_KEY = "emoji-history";
@@ -34,17 +35,25 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedEmoji, setCopiedEmoji] = useState<string | null>(null);
   const [emojiHistory, setEmojiHistory] = useState<string[]>([]);
+  const [popularEmojis, setPopularEmojis] = useState<Awaited<ReturnType<typeof getPopularEmojis>>>([]);
 
   // Load history from localStorage on mount
   useEffect(() => {
     setEmojiHistory(getEmojiHistory());
+    getPopularEmojis(12).then(setPopularEmojis);
   }, []);
 
-  const filteredEmojis = searchQuery
-    ? searchEmojis(searchQuery)
-    : selectedCategory === "all"
-      ? getAllEmojis()
-      : getEmojisByCategory(selectedCategory);
+  // Memoize and sort filtered emojis to ensure consistent order between server and client
+  const filteredEmojis = useMemo(() => {
+    const emojis = searchQuery
+      ? searchEmojis(searchQuery)
+      : selectedCategory === "all"
+        ? getAllEmojis()
+        : getEmojisByCategory(selectedCategory);
+
+    // Sort by ID to ensure consistent rendering order
+    return [...emojis].sort((a, b) => a.id.localeCompare(b.id));
+  }, [searchQuery, selectedCategory]);
 
   const copyToClipboard = async (emoji: string) => {
     try {
@@ -96,6 +105,28 @@ export default function Home() {
           </div>
         )}
 
+        {/* Popular Emojis */}
+        {popularEmojis.length > 0 && !searchQuery && selectedCategory === "all" && (
+          <div className="mb-6">
+            <h2 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+              Popular Emojis
+            </h2>
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12">
+              {popularEmojis.map((emoji) => (
+                <Link
+                  key={emoji.id}
+                  href={getEmojiUrl(emoji.id)}
+                  prefetch
+                  className="flex aspect-square items-center justify-center rounded-lg bg-white p-2 text-2xl transition-all hover:bg-zinc-100 hover:scale-110 active:scale-95 dark:bg-zinc-900 dark:hover:bg-zinc-800 sm:text-3xl"
+                  title={emoji.name}
+                >
+                  {emoji.emoji}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Search Bar */}
         <div className="mb-6">
           <input
@@ -141,6 +172,47 @@ export default function Home() {
           </div>
         </nav>
 
+        {/* Explore Links */}
+        {!searchQuery && selectedCategory === "all" && (
+          <nav className="mb-6">
+            <h2 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+              Explore
+            </h2>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <Link
+                href="/trending"
+                className="flex items-center gap-3 rounded-lg bg-white p-4 shadow-sm transition-all hover:bg-zinc-100 hover:shadow-md dark:bg-zinc-900 dark:hover:bg-zinc-800"
+              >
+                <span className="text-2xl">🔥</span>
+                <div>
+                  <h3 className="font-medium text-zinc-900 dark:text-zinc-50">Trending Emojis</h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">Most popular emojis</p>
+                </div>
+              </Link>
+              <Link
+                href="/collections"
+                className="flex items-center gap-3 rounded-lg bg-white p-4 shadow-sm transition-all hover:bg-zinc-100 hover:shadow-md dark:bg-zinc-900 dark:hover:bg-zinc-800"
+              >
+                <span className="text-2xl">📚</span>
+                <div>
+                  <h3 className="font-medium text-zinc-900 dark:text-zinc-50">Collections</h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">Emojis by occasion</p>
+                </div>
+              </Link>
+              <Link
+                href="/guide"
+                className="flex items-center gap-3 rounded-lg bg-white p-4 shadow-sm transition-all hover:bg-zinc-100 hover:shadow-md dark:bg-zinc-900 dark:hover:bg-zinc-800"
+              >
+                <span className="text-2xl">📖</span>
+                <div>
+                  <h3 className="font-medium text-zinc-900 dark:text-zinc-50">Emoji Guide</h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">How to use emojis</p>
+                </div>
+              </Link>
+            </div>
+          </nav>
+        )}
+
         {/* Toast Notification */}
         {copiedEmoji && (
           <div className="fixed bottom-4 right-4 rounded-lg bg-green-500 px-4 py-2 text-white shadow-lg dark:bg-green-600">
@@ -151,11 +223,19 @@ export default function Home() {
         {/* Emoji Grid */}
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12">
           {filteredEmojis.map((emoji) => (
-            <button
-              key={emoji.emoji}
-              onClick={() => copyToClipboard(emoji.emoji)}
+            <Link
+              key={emoji.id}
+              href={getEmojiUrl(emoji.id)}
+              prefetch={false}
+              onClick={(e) => {
+                // Allow copy on click, but navigate on right-click or modifier key
+                if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                  e.preventDefault();
+                  copyToClipboard(emoji.emoji);
+                }
+              }}
               className="group relative flex aspect-square items-center justify-center rounded-lg bg-white p-2 text-3xl transition-all hover:bg-zinc-100 hover:scale-110 active:scale-95 dark:bg-zinc-900 dark:hover:bg-zinc-800 sm:text-4xl"
-              title={emoji.name}
+              title={`${emoji.emoji} ${emoji.name} - Click to copy, Ctrl/Cmd+Click to view details`}
             >
               {emoji.emoji}
               {copiedEmoji === emoji.emoji && (
@@ -165,7 +245,7 @@ export default function Home() {
                   </svg>
                 </div>
               )}
-            </button>
+            </Link>
           ))}
         </div>
 

@@ -110,7 +110,7 @@ describe("CopyButton Component", () => {
     expect((navigator.clipboard as any)._copiedText).toBe("🐱");
   });
 
-  test("handles clipboard errors gracefully", () => {
+  test("handles clipboard errors gracefully", async () => {
     // Override clipboard mock to throw an error
     Object.defineProperty(navigator, "clipboard", {
       value: {
@@ -122,20 +122,18 @@ describe("CopyButton Component", () => {
       configurable: true,
     });
 
-    const consoleSpy = {
-      error: () => {},
-    };
     const originalError = console.error;
-    console.error = consoleSpy.error;
+    console.error = () => {}; // Suppress error output in test
 
     render(<CopyButton emoji="😀" />);
 
     const button = screen.getByRole("button");
 
-    // Should not throw, should log error instead
-    expect(() => {
-      fireEvent.click(button);
-    }).not.toThrow();
+    // Should not throw uncaught error
+    fireEvent.click(button);
+
+    // Wait for async operations to complete
+    await new Promise(resolve => setTimeout(resolve, 0));
 
     // Restore original
     console.error = originalError;

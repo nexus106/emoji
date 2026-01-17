@@ -10,6 +10,7 @@ import JsonLd from "@/components/seo/JsonLd";
 import Breadcrumb from "@/components/seo/Breadcrumb";
 import EmojiCard from "@/components/seo/EmojiCard";
 import Pagination from "@/components/seo/Pagination";
+import PopularEmojis from "@/components/seo/PopularEmojis";
 
 // Revalidate every 7 days (ISR)
 export const revalidate = 604800;
@@ -23,10 +24,12 @@ export async function generateMetadata({
   params,
   searchParams,
 }: {
-  params: { slug: string };
-  searchParams: { page?: string };
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string }>;
 }): Promise<Metadata> {
-  const category = categories.find((c) => c.id === params.slug);
+  const { slug } = await params;
+  const { page } = await searchParams;
+  const category = categories.find((c) => c.id === slug);
 
   if (!category) {
     return {
@@ -34,10 +37,10 @@ export async function generateMetadata({
     };
   }
 
-  const page = parseInt(searchParams.page || "1");
+  const pageNum = parseInt(page || "1");
   const allEmojis = getEmojisByCategory(category.id);
 
-  return getCategoryMetadata(category, page, allEmojis.length);
+  return getCategoryMetadata(category, pageNum, allEmojis.length);
 }
 
 /**
@@ -49,24 +52,26 @@ export async function generateStaticParams() {
   }));
 }
 
-export default function CategoryPage({
+export default async function CategoryPage({
   params,
   searchParams,
 }: {
-  params: { slug: string };
-  searchParams: { page?: string };
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
-  const category = categories.find((c) => c.id === params.slug);
+  const { slug } = await params;
+  const { page } = await searchParams;
+  const category = categories.find((c) => c.id === slug);
 
   if (!category) {
     notFound();
   }
 
-  const page = parseInt(searchParams.page || "1");
+  const pageNum = parseInt(page || "1");
   const allEmojis = getEmojisByCategory(category.id);
   const emojiCount = allEmojis.length;
   const totalPageCount = totalPages(emojiCount, EMOJIS_PER_PAGE);
-  const emojis = paginateArray(allEmojis, page, EMOJIS_PER_PAGE);
+  const emojis = paginateArray(allEmojis, pageNum, EMOJIS_PER_PAGE);
 
   // Generate breadcrumb
   const breadcrumbItems: BreadcrumbItem[] = [
@@ -118,6 +123,9 @@ export default function CategoryPage({
           </div>
         </header>
 
+        {/* Popular Emojis - Show on first page */}
+        {pageNum === 1 && <PopularEmojis limit={12} title="Trending Emojis" />}
+
         {/* Other Categories */}
         <nav className="mb-8">
           <h2 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
@@ -144,20 +152,20 @@ export default function CategoryPage({
         {/* Emoji Grid */}
         <div className="mb-8 grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12">
           {emojis.map((emoji) => (
-            <EmojiCard key={emoji.id} emoji={emoji} size="md" />
+            <EmojiCard key={emoji.id} emoji={emoji} size="md" prefetch={false} />
           ))}
         </div>
 
         {/* Pagination */}
         <Pagination
-          currentPage={page}
+          currentPage={pageNum}
           totalPages={totalPageCount}
           baseUrl={getCategoryUrl(category.id)}
         />
 
         {/* Page Info */}
         <div className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
-          Page {page} of {totalPageCount} • {emojiCount} total emojis
+          Page {pageNum} of {totalPageCount} • {emojiCount} total emojis
         </div>
       </div>
     </div>

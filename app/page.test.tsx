@@ -29,11 +29,11 @@ describe("Home Page", () => {
 
   test("should render emoji grid", () => {
     render(<Home />);
-    // Check that emojis are rendered by looking for any emoji button
-    // The first emoji in the grid should be visible
-    const emojiButtons = screen.getAllByRole("button");
-    // Should have multiple buttons (categories + many emojis)
-    expect(emojiButtons.length).toBeGreaterThan(10);
+    // Check that emojis are rendered by looking for links
+    // Emojis are now links to detail pages, with a few buttons for categories
+    const emojiLinks = screen.getAllByRole("link");
+    // Should have multiple links (popular emojis + category links + emoji grid)
+    expect(emojiLinks.length).toBeGreaterThan(10);
   });
 
   test("should display results count", () => {

@@ -18,8 +18,9 @@ export const revalidate = 86400;
 /**
  * Generate metadata for emoji page
  */
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const emoji = getEmojiById(params.id);
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const emoji = getEmojiById(id);
 
   if (!emoji) {
     return {
@@ -47,8 +48,9 @@ function getCategoryById(id: string) {
   return categories.find((c) => c.id === id);
 }
 
-export default function EmojiPage({ params }: { params: { id: string } }) {
-  const emoji = getEmojiById(params.id);
+export default async function EmojiPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const emoji = getEmojiById(id);
 
   if (!emoji) {
     notFound();
