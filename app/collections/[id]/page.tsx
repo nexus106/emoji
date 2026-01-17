@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getCollectionById, getAllCollections, getEmojisForCollection } from "@/lib/collections";
+import { getCollectionById, getAllCollections, getEmojisForCollection, type EmojiCollection } from "@/lib/collections";
 import { getSiteUrl } from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import Breadcrumb from "@/components/seo/Breadcrumb";
@@ -61,16 +61,14 @@ export async function generateStaticParams() {
 /**
  * Generate structured data for collection page
  */
-async function getCollectionSchema(collection: any, collectionUrl: string) {
-  const emojis = await getEmojisForCollection(collection);
-
+function getCollectionSchema(collection: EmojiCollection, collectionUrl: string, emojiCount: number) {
   return {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: `${collection.icon} ${collection.title} Emojis`,
     description: collection.description,
     url: collectionUrl,
-    numberOfItems: emojis.length,
+    numberOfItems: emojiCount,
   };
 }
 
@@ -82,7 +80,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ id:
     notFound();
   }
 
-  const emojis = await getEmojisForCollection(collection);
+  const emojis = getEmojisForCollection(collection);
   const siteUrl = getSiteUrl();
   const collectionUrl = `${siteUrl}/collections/${collection.id}`;
 
@@ -97,7 +95,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ id:
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
       <div className="container mx-auto px-4 py-8">
         {/* Structured Data */}
-        <JsonLd data={await getCollectionSchema(collection, collectionUrl)} />
+        <JsonLd data={getCollectionSchema(collection, collectionUrl, emojis.length)} />
         <JsonLd data={{
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",

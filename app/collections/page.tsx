@@ -40,7 +40,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /**
  * Generate structured data for collections page
  */
-async function getCollectionsSchema() {
+function getCollectionsSchema() {
   const siteUrl = getSiteUrl();
   const collections = getAllCollections();
 
@@ -67,7 +67,7 @@ export default async function CollectionsPage() {
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
       <div className="container mx-auto px-4 py-8">
         {/* Structured Data */}
-        <JsonLd data={await getCollectionsSchema()} />
+        <JsonLd data={getCollectionsSchema()} />
         <JsonLd data={{
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",

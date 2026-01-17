@@ -1,4 +1,5 @@
 import type { Emoji } from "./types";
+import { getEmojiById } from "./emojis";
 
 /**
  * Popular emoji short names based on common usage patterns
@@ -185,10 +186,9 @@ const POPULAR_EMOJI_IDS = [
 
 /**
  * Get popular emojis (limit count)
+ * Now synchronous for better SSR performance
  */
-export async function getPopularEmojis(limit: number = 50): Promise<Emoji[]> {
-  const { getEmojiById } = await import("./emojis");
-
+export function getPopularEmojis(limit: number = 50): Emoji[] {
   const emojis: Emoji[] = [];
   for (const id of POPULAR_EMOJI_IDS) {
     const emoji = getEmojiById(id);
@@ -205,6 +205,6 @@ export async function getPopularEmojis(limit: number = 50): Promise<Emoji[]> {
 /**
  * Get trending emojis (subset of popular)
  */
-export async function getTrendingEmojis(limit: number = 20): Promise<Emoji[]> {
+export function getTrendingEmojis(limit: number = 20): Emoji[] {
   return getPopularEmojis(limit);
 }

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getEmojiById, getEmojisByCategory } from "@/lib/emojis";
+import { getEmojiById } from "@/lib/emojis";
 import { categories } from "@/lib/categories";
 import { getEmojiMetadata } from "@/lib/metadata";
 import { getEmojiSchema, getBreadcrumbSchema, type BreadcrumbItem } from "@/lib/structured-data";
@@ -32,10 +32,14 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 /**
- * Generate static params for first 1000 emojis
+ * Generate static params for all emojis
+ * This pre-renders all emoji pages at build time for optimal performance
  */
 export async function generateStaticParams() {
-  const emojis = getEmojisByCategory("people").slice(0, 100); // Limit for build time
+  const { getAllEmojis } = await import("@/lib/emojis");
+  const emojis = getAllEmojis();
+
+  // Return params for all emojis
   return emojis.map((emoji) => ({
     id: emoji.id,
   }));

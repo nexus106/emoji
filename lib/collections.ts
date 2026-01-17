@@ -1,4 +1,5 @@
 import type { Emoji } from "./types";
+import { getEmojiById } from "./emojis";
 
 export interface EmojiCollection {
   id: string;
@@ -151,10 +152,9 @@ export function getAllCollections(): EmojiCollection[] {
 
 /**
  * Get emojis for a collection
+ * Now synchronous for better SSR performance
  */
-export async function getEmojisForCollection(collection: EmojiCollection): Promise<Emoji[]> {
-  const { getEmojiById } = await import("./emojis");
-
+export function getEmojisForCollection(collection: EmojiCollection): Emoji[] {
   const emojis: Emoji[] = [];
   for (const id of collection.emojiIds) {
     const emoji = getEmojiById(id);

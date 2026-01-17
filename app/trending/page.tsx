@@ -4,8 +4,7 @@ import { getPopularEmojis } from "@/lib/popular-emojis";
 import { getSiteUrl } from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import Breadcrumb from "@/components/seo/Breadcrumb";
-import type { BreadcrumbItem } from "@/lib/structured-data";
-import EmojiCard from "@/components/seo/EmojiCard";
+import { getBreadcrumbSchema, type BreadcrumbItem } from "@/lib/structured-data";
 
 const SITE_NAME = "Emoji Copy";
 
@@ -53,7 +52,7 @@ function getTrendingSchema() {
 }
 
 export default async function TrendingPage() {
-  const trendingEmojis = await getPopularEmojis(100);
+  const trendingEmojis = getPopularEmojis(100);
 
   // Generate breadcrumb
   const breadcrumbItems: BreadcrumbItem[] = [
@@ -66,7 +65,7 @@ export default async function TrendingPage() {
       <div className="container mx-auto px-4 py-8">
         {/* Structured Data */}
         <JsonLd data={getTrendingSchema()} />
-        <JsonLd data={await import("@/lib/structured-data").then(m => m.getBreadcrumbSchema(breadcrumbItems))} />
+        <JsonLd data={getBreadcrumbSchema(breadcrumbItems)} />
 
         {/* Breadcrumb */}
         <Breadcrumb items={breadcrumbItems} />
